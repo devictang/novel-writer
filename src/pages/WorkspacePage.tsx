@@ -15,6 +15,8 @@ import {
 import type { Work, Chapter, Entity, ChapterStatus } from '../types';
 import { EntityPanel } from '../components/EntityPanel';
 import { SceneCardEditor } from '../components/SceneCardEditor';
+import { SlashMenu } from '../components/SlashMenu';
+import { SlashCommandExtension } from '../extensions/SlashCommand';
 
 export function WorkspacePage() {
   const { workId, chapterId } = useParams();
@@ -400,6 +402,7 @@ function ChapterEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
+      SlashCommandExtension.configure({ items: [] }),
       Placeholder.configure({ placeholder: '開始寫作，或使用 AI 從場景卡生成…' }),
       Highlight,
       CharacterCount.configure({ limit: 100000 }),
@@ -543,8 +546,9 @@ function ChapterEditor({
       </div>
 
       {/* TipTap Editor */}
-      <div className="prose-sm min-h-[400px]">
+      <div className="prose-sm min-h-[400px] relative">
         <EditorContent editor={editor} />
+        <SlashMenu editor={editor} />
       </div>
 
       {/* Footer */}
