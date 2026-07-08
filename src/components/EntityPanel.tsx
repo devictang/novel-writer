@@ -31,7 +31,6 @@ export function EntityPanel({
           work_id: workId,
           type,
           name,
-          owner_id: userData.user.id,
         })
         .select()
         .single();
@@ -43,6 +42,9 @@ export function EntityPanel({
       toast.success('實體已創建');
       setShowCreate(false);
       setNewName('');
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : '新增失敗');
     },
   });
 

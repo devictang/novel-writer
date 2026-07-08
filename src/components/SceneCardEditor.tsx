@@ -110,7 +110,6 @@ function EntitySelector({
           work_id: workId,
           type,
           name,
-          owner_id: userData.user.id,
         })
         .select()
         .single();
@@ -121,6 +120,9 @@ function EntitySelector({
       queryClient.invalidateQueries({ queryKey: ['entities', workId] });
       onChange([...selected, entity.id]);
       setShowPicker(false);
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : '新增失敗');
     },
   });
 
