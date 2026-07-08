@@ -234,6 +234,19 @@ export function ChapterOverview({ chapter, scenes, entities, workId }: ChapterOv
                     >
                       <Edit3 size={12} />
                     </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`確定刪除場景「${scene.title}」？`))
+                          supabase.from('chapters').delete().eq('id', scene.id).then(() => {
+                            queryClient.invalidateQueries({ queryKey: ['chapters', workId] });
+                            toast.success('場景已刪除');
+                          });
+                      }}
+                      className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+                      title="刪除場景"
+                    >
+                      ✕
+                    </button>
                   </div>
                 </div>
 

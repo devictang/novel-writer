@@ -33,6 +33,7 @@ export function WorkspacePage() {
 // ============================================================
 function WorksListPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState('');
 
@@ -63,6 +64,28 @@ function WorksListPage() {
     onSuccess: (work) => {
       toast.success(`已創建「${work.title}」`);
       navigate(`/workspace/${work.id}`);
+    },
+  });
+
+  const deleteWork = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('works').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['works'] });
+      toast.success('作品已刪除');
+    },
+  });
+
+  const renameWork = useMutation({
+    mutationFn: async ({ id, title }: { id: string; title: string }) => {
+      const { error } = await supabase.from('works').update({ title }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['works'] });
+      toast.success('作品已重新命名');
     },
   });
 
@@ -116,17 +139,7 @@ function WorksListPage() {
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {works?.map((w) => (
-            <button
-              key={w.id}
-              onClick={() => navigate(`/workspace/${w.id}`)}
-              className="rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:border-quill hover:shadow-sm"
-            >
-              <BookOpen size={20} className="mb-2 text-quill" />
-              <h3 className="font-serif text-lg font-semibold text-ink">{w.title}</h3>
-              <p className="mt-1 text-xs text-gray-400">
-                {new Date(w.updated_at).toLocaleDateString('zh-HK')}
-              </p>
-            </button>
+            <WorkCard key={w.id} work={w} onDelete={() => deleteWork.mutate(w.id)} onRename={(title) => renameWork.mutate({ id: w.id, title })} navigate={navigate} />
           ))}
         </div>
       </div>
@@ -267,6 +280,50 @@ function WorkEditor({ workId, chapterId }: { workId: string; chapterId?: string 
 }
 
 // ============================================================
+// Work Card (with dropdown menu)
+// ============================================================
+function WorkCard({ work, onDelete, onRename, navigate }: { work: Work; onDelete: () => void; onRename: (title: string) => void; navigate: (path: string) => void }) {
+  const [showMenu, setShowMenu] = useState(false);
+
+  return (
+    <div className="relative rounded-lg border border-gray-200 bg-white p-4 transition hover:border-quill hover:shadow-sm">
+      <button className="w-full text-left" onClick={() => navigate(`/workspace/${work.id}`)}>
+        <BookOpen size={20} className="mb-2 text-quill" />
+        <h3 className="font-serif text-lg font-semibold text-ink">{work.title}</h3>
+        <p className="mt-1 text-xs text-gray-400">
+          {new Date(work.updated_at).toLocaleDateString('zh-HK')}
+        </p>
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+        className="absolute right-2 top-2 rounded p-1 text-gray-400 hover:bg-gray-100"
+      >
+        <span className="text-lg leading-none">⋯</span>
+      </button>
+      {showMenu && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+          <div className="absolute right-2 top-8 z-20 w-36 rounded-lg border border-gray-200 bg-white shadow-lg">
+            <button
+              onClick={() => { const t = prompt('重新命名作品：', work.title); if (t && t !== work.title) onRename(t); setShowMenu(false); }}
+              className="flex w-full items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+            >
+              重新命名
+            </button>
+            <button
+              onClick={() => { if (confirm(`確定刪除「${work.title}」？所有章節同資料都會一併刪除。`)) onDelete(); setShowMenu(false); }}
+              className="flex w-full items-center px-3 py-2 text-xs text-red-500 hover:bg-red-50"
+            >
+              刪除作品
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
 // Chapter Tree Node (recursive)
 // ============================================================
 function ChapterNode({
@@ -317,6 +374,17 @@ function ChapterNode({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chapters', workId] }),
   });
 
+  const deleteChapter = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('chapters').delete().eq('id', chapter.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chapters', workId] });
+      toast.success('已刪除');
+    },
+  });
+
   const statusLabels: Record<ChapterStatus, string> = {
     scene_card: '場景卡',
     draft: '草稿',
@@ -362,8 +430,23 @@ function ChapterNode({
         <button
           onClick={() => addChild.mutate()}
           className="hidden shrink-0 rounded p-0.5 text-gray-400 hover:bg-gray-200 group-hover:block"
+          title="新增子場景"
         >
           <Plus size={10} />
+        </button>
+        <button
+          onClick={() => { const t = prompt('重新命名：', chapter.title); if (t && t !== chapter.title) rename.mutate(t); }}
+          className="hidden shrink-0 rounded p-0.5 text-gray-400 hover:text-quill hover:bg-gray-200 group-hover:block"
+          title="重新命名"
+        >
+          ✎
+        </button>
+        <button
+          onClick={() => { if (confirm(`確定刪除「${chapter.title}」？`)) deleteChapter.mutate(); }}
+          className="hidden shrink-0 rounded p-0.5 text-gray-400 hover:text-red-500 hover:bg-gray-200 group-hover:block"
+          title="刪除"
+        >
+          ✕
         </button>
       </div>
       {expanded && children.length > 0 && (
