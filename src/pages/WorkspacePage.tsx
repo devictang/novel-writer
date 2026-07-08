@@ -16,6 +16,7 @@ import type { Work, Chapter, Entity, ChapterStatus } from '../types';
 import { EntityPanel } from '../components/EntityPanel';
 import { SceneCardEditor } from '../components/SceneCardEditor';
 import { SlashMenu } from '../components/SlashMenu';
+import { ChapterOverview } from './ChapterOverview';
 import { SlashCommandExtension } from '../extensions/SlashCommand';
 
 export function WorkspacePage() {
@@ -231,7 +232,7 @@ function WorkEditor({ workId, chapterId }: { workId: string; chapterId?: string 
       {/* Center: Editor / Scene Card */}
       <div className="flex-1 overflow-y-auto">
         {activeChapter ? (
-          <ChapterEditor chapter={activeChapter} entities={entities ?? []} workId={workId} />
+          <ChapterEditor chapter={activeChapter} entities={entities ?? []} workId={workId} allChapters={chapters ?? []} />
         ) : (
           <div className="flex h-full items-center justify-center text-gray-400">
             <div className="text-center">
@@ -346,6 +347,7 @@ function ChapterNode({
           <span className="w-3" />
         )}
         <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${statusColors[chapter.status]}`} />
+        <span className="text-[10px] font-medium text-gray-400">{depth === 0 ? '章' : '場景'}</span>
         <span
           className="flex-1 cursor-pointer truncate"
           onClick={() => navigate(`/workspace/${workId}/${chapter.id}`)}
@@ -389,11 +391,26 @@ function ChapterEditor({
   chapter,
   entities,
   workId,
+  allChapters,
 }: {
   chapter: Chapter;
   entities: Entity[];
   workId: string;
+  allChapters: Chapter[];
 }) {
+  const sceneChildren = allChapters.filter((c) => c.parent_id === chapter.id);
+
+  // If this chapter has scene children, show the multi-scene overview
+  if (sceneChildren.length > 0) {
+    return (
+      <ChapterOverview
+        chapter={chapter}
+        scenes={sceneChildren}
+        entities={entities}
+        workId={workId}
+      />
+    );
+  }
   const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
   const [showSceneCard, setShowSceneCard] = useState(chapter.status === 'scene_card');
@@ -576,8 +593,10 @@ function WritingBriefPanel({ chapter, workId }: { chapter: Chapter; workId: stri
   const fields = [
     { key: 'pov', label: '敘述視角', placeholder: 'e.g. 小明第三人稱有限視角' },
     { key: 'tone', label: '語調/氛圍', placeholder: 'e.g. 神秘 + 些少不安' },
-    { key: 'pacing', label: '節奏', placeholder: 'e.g. 開頭平靜→中段緊張→結尾 cliffhanger' },
-    { key: 'target_word_count', label: '目標字數', placeholder: 'e.g. 1500' },
+    { key: 'pacing', label: '節奏', placeholder: 'e.g. 開頭平靜→中段緊張' },
+    { key: 'target_word_count', label: '目標字數', placeholder: 'e.g. 800' },
+    { key: 'transition_hint', label: '轉場標記', placeholder: 'e.g. — / ## 與此同時… / 鏡頭一轉' },
+    { key: 'next_scene_hint', label: '下一場景提示', placeholder: 'e.g. 鏡頭轉到公主嗰邊' },
     { key: 'author_notes', label: '作者補充筆記', placeholder: '呢場係全書轉捩點…' },
   ];
 
