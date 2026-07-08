@@ -45,15 +45,17 @@ export const SlashCommandExtension = Extension.create<{ items: SlashCommandItem[
                 return false;
               }
 
-              if ($from.parentOffset !== 0) {
-                return false;
-              }
-
-              // Find position where slash was typed
               const pos = $from.pos;
 
-              // Dispatch custom event that React can listen to
-              const eventDetail = { pos, editor: this.editor };
+              // Get cursor screen coordinates (viewport-relative)
+              const coords = view.coordsAtPos(pos);
+
+              const eventDetail = {
+                pos,
+                x: coords.left,
+                y: coords.bottom + 4,
+                editor: this.editor,
+              };
               window.dispatchEvent(
                 new CustomEvent('slash-command-open', { detail: eventDetail })
               );
@@ -61,7 +63,6 @@ export const SlashCommandExtension = Extension.create<{ items: SlashCommandItem[
               return false;
             }
 
-            // Close slash menu on Escape
             if (event.key === 'Escape') {
               window.dispatchEvent(new CustomEvent('slash-command-close'));
               return false;

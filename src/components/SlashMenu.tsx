@@ -11,6 +11,8 @@ export function SlashMenu({ editor }: SlashMenuProps) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [pos, setPos] = useState<number | null>(null);
+  const [menuX, setMenuX] = useState(0);
+  const [menuY, setMenuY] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const inputTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -39,6 +41,8 @@ export function SlashMenu({ editor }: SlashMenuProps) {
       const detail = (e as CustomEvent).detail;
       if (detail?.pos !== undefined) {
         setPos(detail.pos);
+        setMenuX(detail.x ?? 0);
+        setMenuY(detail.y ?? 0);
       }
       setQuery('');
       setSelectedIndex(0);
@@ -54,12 +58,28 @@ export function SlashMenu({ editor }: SlashMenuProps) {
     };
   }, []);
 
-  // Listen for keyboard input after slash
+  // Read current text after slash to see if / was deleted
+  const readQueryFromEditor = useCallback(() => {
+    if (!editor || pos === null) return;
+
+    const text = editor.state.doc.textBetween(pos, editor.state.selection.from);
+
+    // If the slash was deleted (text no longer starts with /), close the menu
+    if (!text.startsWith('/')) {
+      setOpen(false);
+      return;
+    }
+
+    const q = text.replace(/^\//, '').trim();
+    setQuery(q);
+    setSelectedIndex(0);
+  }, [editor, pos]);
+
+  // Listen for keyboard events while menu is open
   useEffect(() => {
     if (!open) return;
 
     const handler = (e: KeyboardEvent) => {
-      // Close on Escape, Enter, arrow keys handled separately
       if (e.key === 'Escape') {
         setOpen(false);
         return;
@@ -83,18 +103,11 @@ export function SlashMenu({ editor }: SlashMenuProps) {
         return;
       }
 
-      if (e.key === 'Backspace') {
-        // The editor handles backspace normally — the extension tracks query
-        // We debounce read the current text
+      // Any key that changes text — reread the query
+      if (e.key.length === 1 || e.key === 'Backspace') {
         clearTimeout(inputTimer.current);
-        inputTimer.current = setTimeout(readQueryFromEditor, 50);
+        inputTimer.current = setTimeout(readQueryFromEditor, 30);
         return;
-      }
-
-      // Regular character — read the text after slash
-      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-        clearTimeout(inputTimer.current);
-        inputTimer.current = setTimeout(readQueryFromEditor, 50);
       }
     };
 
@@ -103,16 +116,7 @@ export function SlashMenu({ editor }: SlashMenuProps) {
       document.removeEventListener('keydown', handler);
       clearTimeout(inputTimer.current);
     };
-  }, [open, filteredItems, selectedIndex]);
-
-  const readQueryFromEditor = useCallback(() => {
-    if (!editor || pos === null) return;
-    const text = editor.state.doc.textBetween(pos, editor.state.selection.from);
-    // Remove the leading / and any whitespace
-    const q = text.replace(/^\//, '').trim();
-    setQuery(q);
-    setSelectedIndex(0);
-  }, [editor, pos]);
+  }, [open, filteredItems, selectedIndex, readQueryFromEditor]);
 
   const executeCommand = useCallback(
     (item: SlashCommandItem) => {
@@ -144,10 +148,8 @@ export function SlashMenu({ editor }: SlashMenuProps) {
       ref={menuRef}
       className="fixed z-50 w-72 rounded-xl border border-gray-200 bg-white shadow-lg"
       style={{
-        top: 'auto',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        marginTop: '4px',
+        left: menuX,
+        top: menuY,
       }}
     >
       {query && (
