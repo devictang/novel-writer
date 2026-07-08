@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { Plus, Trash2 } from 'lucide-react';
-import type { Entity, EntityMetadata, SceneCard } from '../types';
+import type { Entity, SceneCard } from '../types';
 
 export function SceneCardEditor({
   chapter,
@@ -29,13 +29,13 @@ export function SceneCardEditor({
 
   return (
     <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
-      <div className="mb-2 text-xs font-semibold text-gray-600">📋 Scene Card</div>
+      <div className="mb-2 text-xs font-semibold text-gray-600">📋 場景卡</div>
 
       {/* Summary */}
       <textarea
         defaultValue={card.summary ?? ''}
         onBlur={(e) => update('summary', e.target.value)}
-        placeholder="Scene summary: what happens in this scene?"
+        placeholder="場景摘要：呢個場景發生咩事？"
         className="mb-3 w-full rounded border border-gray-200 bg-white px-2 py-1.5 text-sm"
         rows={2}
       />
@@ -43,7 +43,7 @@ export function SceneCardEditor({
       {/* Entity selectors */}
       <div className="grid gap-2 sm:grid-cols-3">
         <EntitySelector
-          label="👤 Characters"
+          label="👤 角色"
           type="character"
           entities={entities}
           selected={card.characters ?? []}
@@ -51,7 +51,7 @@ export function SceneCardEditor({
           workId={workId}
         />
         <EntitySelector
-          label="🌍 Locations"
+          label="🌍 地點"
           type="worldbuilding"
           entities={entities}
           selected={card.locations ?? []}
@@ -59,7 +59,7 @@ export function SceneCardEditor({
           workId={workId}
         />
         <EntitySelector
-          label="🔍 Foreshadows"
+          label="🔍 伏筆"
           type="foreshadow"
           entities={entities}
           selected={card.foreshadows ?? []}
@@ -72,7 +72,7 @@ export function SceneCardEditor({
       <input
         defaultValue={card.notes ?? ''}
         onBlur={(e) => update('notes', e.target.value)}
-        placeholder="Scene notes (optional)…"
+        placeholder="場景備註（可選）…"
         className="mt-2 w-full rounded border border-gray-200 bg-white px-2 py-1 text-xs"
       />
     </div>
@@ -103,7 +103,7 @@ function EntitySelector({
   const createEntity = useMutation({
     mutationFn: async (name: string) => {
       const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('Not authenticated');
+      if (!userData.user) throw new Error('未登入');
       const { data, error } = await supabase
         .from('entities')
         .insert({
@@ -156,7 +156,7 @@ function EntitySelector({
           <div className="mt-1 flex gap-1">
             <input
               type="text"
-              placeholder="New name…"
+              placeholder="新增名稱…"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   const name = (e.target as HTMLInputElement).value.trim();
@@ -173,7 +173,7 @@ function EntitySelector({
           onClick={() => setShowPicker(true)}
           className="mt-1 flex items-center gap-0.5 text-xs text-quill hover:text-quill-dark"
         >
-          <Plus size={10} /> Add
+          <Plus size={10} /> 新增
         </button>
       )}
     </div>

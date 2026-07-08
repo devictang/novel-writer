@@ -25,15 +25,15 @@ export function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success('Account created! Check your email for confirmation.');
+        toast.success('帳戶已創建！請檢查電郵確認。');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast.success('Welcome back!');
+        toast.success('歡迎回來！');
         navigate('/workspace');
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Authentication failed');
+      toast.error(err instanceof Error ? err.message : '認證失敗');
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,7 @@ export function AuthPage() {
         <div className="mb-8 text-center">
           <Feather className="mx-auto mb-3 text-quill" size={48} />
           <h1 className="font-serif text-3xl font-bold text-ink">Novel Writer</h1>
-          <p className="mt-1 text-sm text-ink-muted">敘事管理工作台</p>
+          <p className="mt-1 text-sm text-ink-muted">敘事管理與寫作助手</p>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
@@ -58,7 +58,7 @@ export function AuthPage() {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              Sign In
+              登入
             </button>
             <button
               onClick={() => setMode('signup')}
@@ -68,13 +68,13 @@ export function AuthPage() {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              Sign Up
+              註冊
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Email</label>
+              <label className="mb-1 block text-xs font-medium text-gray-600">電郵</label>
               <input
                 type="email"
                 required
@@ -85,7 +85,7 @@ export function AuthPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Password</label>
+              <label className="mb-1 block text-xs font-medium text-gray-600">密碼</label>
               <input
                 type="password"
                 required
@@ -101,13 +101,13 @@ export function AuthPage() {
               disabled={loading}
               className="w-full rounded-lg bg-quill py-2.5 text-sm font-medium text-white transition hover:bg-quill-dark disabled:opacity-50"
             >
-              {loading ? 'Loading…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
+              {loading ? '載入中…' : mode === 'signin' ? '登入' : '建立帳戶'}
             </button>
           </form>
         </div>
 
         <p className="mt-4 text-center text-xs text-gray-400">
-          <Link to="/read/demo" className="hover:text-quill">Reader? Open a shared link →</Link>
+          <Link to="/read/demo" className="hover:text-quill">讀者模式？開啟分享連結 →</Link>
         </p>
       </div>
     </div>

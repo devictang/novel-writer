@@ -12,7 +12,6 @@ export function ReaderPage() {
   const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Load reading link + chapters
   useEffect(() => {
     if (!slug) return;
 
@@ -26,14 +25,13 @@ export function ReaderPage() {
         .maybeSingle();
 
       if (linkErr || !link) {
-        setError('This story is not available.');
+        setError('這個故事暫時無法閱讀。');
         setLoading(false);
         return;
       }
 
       setReadingLink(link as ReadingLink);
 
-      // Fetch chapters in order
       if (link.included_chapters && link.included_chapters.length > 0) {
         const { data: chaps } = await supabase
           .from('chapters')
@@ -47,7 +45,6 @@ export function ReaderPage() {
     })();
   }, [slug]);
 
-  // Restore scroll position from localStorage
   useEffect(() => {
     if (loading || !slug) return;
     const saved = localStorage.getItem(`gq-reader-${slug}`);
@@ -59,7 +56,6 @@ export function ReaderPage() {
     }
   }, [loading, slug]);
 
-  // Save scroll position on scroll (debounced)
   useEffect(() => {
     if (!slug) return;
     let timer: ReturnType<typeof setTimeout>;
@@ -81,7 +77,7 @@ export function ReaderPage() {
       <div className="flex h-screen items-center justify-center bg-parchment">
         <div className="text-center">
           <Loader2 className="mx-auto mb-3 animate-spin text-quill" size={32} />
-          <p className="text-sm text-gray-500">Loading story…</p>
+          <p className="text-sm text-gray-500">載入故事中…</p>
         </div>
       </div>
     );
@@ -107,23 +103,20 @@ export function ReaderPage() {
 
   return (
     <div className="min-h-screen bg-parchment">
-      {/* Fixed progress bar */}
       <div className="fixed left-0 top-0 z-50 h-0.5 bg-quill transition-all" style={{ width: `${progress}%` }} />
 
-      {/* Header */}
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur">
         <div className="mx-auto max-w-2xl px-6 py-4">
           <div className="flex items-center gap-2">
             <Feather size={16} className="text-quill" />
-            <span className="font-serif text-sm font-semibold text-ink">{readingLink?.title || 'Untitled'}</span>
+            <span className="font-serif text-sm font-semibold text-ink">{readingLink?.title || '未命名作品'}</span>
           </div>
         </div>
       </header>
 
-      {/* Content */}
       <div ref={containerRef} className="mx-auto max-w-2xl px-6 py-12">
         <h1 className="mb-8 text-center font-serif text-3xl font-bold text-ink">
-          {readingLink?.title || 'Untitled Story'}
+          {readingLink?.title || '未命名故事'}
         </h1>
 
         <div className="reader-content space-y-12">
@@ -141,9 +134,9 @@ export function ReaderPage() {
         </div>
 
         <div className="mt-12 text-center text-xs text-gray-400">
-          <p>— End of available content —</p>
+          <p>— 已到達可閱讀內容的結尾 —</p>
           <p className="mt-2">
-            Progress saved. Come back anytime to continue reading.
+            閱讀進度已儲存。隨時回來繼續閱讀。
           </p>
         </div>
       </div>
@@ -151,10 +144,9 @@ export function ReaderPage() {
   );
 }
 
-// Render TipTap blocks to plain HTML (minimal renderer for reader)
 function RenderBlocks({ blocks }: { blocks: unknown[] }) {
   if (!blocks || blocks.length === 0) {
-    return <p className="text-gray-400 italic">No content yet.</p>;
+    return <p className="text-gray-400 italic">暫無內容。</p>;
   }
 
   return (

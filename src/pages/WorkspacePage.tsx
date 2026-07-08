@@ -48,7 +48,7 @@ function WorksListPage() {
   const createMutation = useMutation({
     mutationFn: async (title: string) => {
       const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('Not authenticated');
+      if (!userData.user) throw new Error('未登入');
       const { data, error } = await supabase
         .from('works')
         .insert({ title, owner_id: userData.user.id })
@@ -58,7 +58,7 @@ function WorksListPage() {
       return data;
     },
     onSuccess: (work) => {
-      toast.success(`Created "${work.title}"`);
+      toast.success(`已創建「${work.title}」`);
       navigate(`/workspace/${work.id}`);
     },
   });
@@ -67,12 +67,12 @@ function WorksListPage() {
     <div className="h-full overflow-y-auto p-6">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="font-serif text-2xl font-bold text-ink">My Works</h1>
+          <h1 className="font-serif text-2xl font-bold text-ink">我的作品</h1>
           <button
             onClick={() => setShowCreate(true)}
             className="flex items-center gap-1.5 rounded-lg bg-quill px-3 py-2 text-sm font-medium text-white hover:bg-quill-dark"
           >
-            <Plus size={16} /> New Work
+            <Plus size={16} /> 新作品
           </button>
         </div>
 
@@ -90,7 +90,7 @@ function WorksListPage() {
                   setNewTitle('');
                 }
               }}
-              placeholder="Work title…"
+              placeholder="作品名稱…"
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-quill focus:outline-none"
             />
           </div>
@@ -106,7 +106,7 @@ function WorksListPage() {
               <BookOpen size={20} className="mb-2 text-quill" />
               <h3 className="font-serif text-lg font-semibold text-ink">{w.title}</h3>
               <p className="mt-1 text-xs text-gray-400">
-                {new Date(w.updated_at).toLocaleDateString()}
+                {new Date(w.updated_at).toLocaleDateString('zh-HK')}
               </p>
             </button>
           ))}
@@ -172,7 +172,7 @@ function WorkEditor({ workId, chapterId }: { workId: string; chapterId?: string 
           work_id: workId,
           parent_id: parentId,
           sort_order: maxOrder + 1,
-          title: 'New Chapter',
+          title: '新章節',
         })
         .select()
         .single();
@@ -181,7 +181,7 @@ function WorkEditor({ workId, chapterId }: { workId: string; chapterId?: string 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chapters', workId] });
-      toast.success('Chapter created');
+      toast.success('章節已創建');
     },
   });
 
@@ -194,7 +194,7 @@ function WorkEditor({ workId, chapterId }: { workId: string; chapterId?: string 
           <button
             onClick={() => createChapter.mutate(null)}
             className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-quill"
-            title="New top-level chapter"
+            title="新增頂層章節"
           >
             <Plus size={14} />
           </button>
@@ -205,7 +205,7 @@ function WorkEditor({ workId, chapterId }: { workId: string; chapterId?: string 
           ))}
           {(!chapters || chapters.length === 0) && (
             <p className="px-2 py-4 text-center text-xs text-gray-400">
-              No chapters yet. Click + to create one.
+              尚未有章節，按 + 創建第一個章節。
             </p>
           )}
         </div>
@@ -219,7 +219,7 @@ function WorkEditor({ workId, chapterId }: { workId: string; chapterId?: string 
           <div className="flex h-full items-center justify-center text-gray-400">
             <div className="text-center">
               <FileText size={48} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Select a chapter to start writing</p>
+              <p className="text-sm">選擇一個章節開始寫作</p>
             </div>
           </div>
         )}
@@ -238,7 +238,7 @@ function WorkEditor({ workId, chapterId }: { workId: string; chapterId?: string 
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              {t === 'character' ? '👤' : t === 'worldbuilding' ? '🌍' : '🔍'} {t}
+              {t === 'character' ? '👤' : t === 'worldbuilding' ? '🌍' : '🔍'} {t === 'character' ? '角色' : t === 'worldbuilding' ? '世界觀' : '伏筆'}
             </button>
           ))}
         </div>
@@ -278,7 +278,7 @@ function ChapterNode({
           work_id: workId,
           parent_id: chapter.id,
           sort_order: maxOrder + 1,
-          title: 'New Scene',
+          title: '新場景',
         })
         .select()
         .single();
@@ -298,6 +298,13 @@ function ChapterNode({
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chapters', workId] }),
   });
+
+  const statusLabels: Record<ChapterStatus, string> = {
+    scene_card: '場景卡',
+    draft: '草稿',
+    review: '審閱',
+    final: '定稿',
+  };
 
   const statusColors: Record<ChapterStatus, string> = {
     scene_card: 'bg-gray-300',
@@ -326,12 +333,13 @@ function ChapterNode({
           className="flex-1 cursor-pointer truncate"
           onClick={() => navigate(`/workspace/${workId}/${chapter.id}`)}
           onDoubleClick={() => {
-            const newTitle = prompt('Rename chapter:', chapter.title);
+            const newTitle = prompt('重新命名章節：', chapter.title);
             if (newTitle && newTitle !== chapter.title) rename.mutate(newTitle);
           }}
         >
           {chapter.title}
         </span>
+        <span className="text-[10px] text-gray-400">{statusLabels[chapter.status]}</span>
         <button
           onClick={() => addChild.mutate()}
           className="hidden shrink-0 rounded p-0.5 text-gray-400 hover:bg-gray-200 group-hover:block"
@@ -377,13 +385,12 @@ function ChapterEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Placeholder.configure({ placeholder: 'Start writing or use AI to generate from scene card…' }),
+      Placeholder.configure({ placeholder: '開始寫作，或使用 AI 從場景卡生成…' }),
       Highlight,
       CharacterCount.configure({ limit: 100000 }),
     ],
     content: chapter.content,
     onUpdate: ({ editor }) => {
-      // Debounced save
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
         saveContent(editor.getJSON());
@@ -397,7 +404,6 @@ function ChapterEditor({
     if (editor && chapter.content) {
       editor.commands.setContent(chapter.content);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapter.id]);
 
   const saveContent = useCallback(
@@ -413,7 +419,7 @@ function ChapterEditor({
         })
         .eq('id', chapter.id);
       if (error) {
-        toast.error('Auto-save failed');
+        toast.error('自動儲存失敗');
       } else {
         queryClient.invalidateQueries({ queryKey: ['chapters', workId] });
       }
@@ -421,12 +427,11 @@ function ChapterEditor({
     [chapter, editor, queryClient, workId]
   );
 
-  // AI Generate
   const handleGenerate = async () => {
     setGenerating(true);
     try {
       const { data: session } = await supabase.auth.getSession();
-      if (!session.data.session?.access_token) throw new Error('Not authenticated');
+      if (!session.data.session?.access_token) throw new Error('未登入');
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-prose`,
@@ -445,30 +450,28 @@ function ChapterEditor({
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || 'Generation failed');
+        throw new Error(err.error || '生成失敗');
       }
 
       const result = await response.json();
 
-      // Insert generated prose into editor
       if (result.prose && editor) {
         editor.commands.setContent(result.prose);
         saveContent(result.prose);
       }
 
-      // Update entities if AI detected changes
       if (result.entity_updates && result.entity_updates.length > 0) {
-        toast.success(`Generated! ${result.entity_updates.length} entity updates detected.`);
+        toast.success(`已生成！偵測到 ${result.entity_updates.length} 項實體變化。`);
         queryClient.invalidateQueries({ queryKey: ['entities', workId] });
       } else {
-        toast.success('Generated!');
+        toast.success('已生成！');
       }
 
       if (result.quota) {
-        toast(`Quota: ${result.quota.used}/${result.quota.limit}`, { icon: '⚡' });
+        toast(`配額：${result.quota.used}/${result.quota.limit}`, { icon: '⚡' });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'AI generation failed');
+      toast.error(err instanceof Error ? err.message : 'AI 生成失敗');
     } finally {
       setGenerating(false);
     }
@@ -488,13 +491,13 @@ function ChapterEditor({
               showSceneCard ? 'bg-quill text-white' : 'bg-gray-100 text-gray-600'
             }`}
           >
-            Scene Card
+            場景卡
           </button>
           <button
             onClick={() => setShowWritingBrief(!showWritingBrief)}
             className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200"
           >
-            Writing Brief
+            寫作設定
           </button>
         </div>
       </div>
@@ -517,10 +520,10 @@ function ChapterEditor({
           className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-quill to-quill-dark px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
         >
           <Sparkles size={14} />
-          {generating ? 'Generating…' : 'AI Generate'}
+          {generating ? '生成中…' : 'AI 生成'}
         </button>
         <span className="text-xs text-gray-400">
-          Uses scene card + entity context
+          使用場景卡 + 實體資料生成章節
         </span>
       </div>
 
@@ -531,8 +534,8 @@ function ChapterEditor({
 
       {/* Footer */}
       <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-2 text-xs text-gray-400">
-        <span>{words} words</span>
-        <span>Rev {chapter.revision} · {chapter.status}</span>
+        <span>{words} 字</span>
+        <span>修訂 {chapter.revision} · {chapter.status === 'scene_card' ? '場景卡' : chapter.status === 'draft' ? '草稿' : chapter.status === 'review' ? '審閱' : '定稿'}</span>
       </div>
     </div>
   );
@@ -554,14 +557,14 @@ function WritingBriefPanel({ chapter, workId }: { chapter: Chapter; workId: stri
   const fields = [
     { key: 'pov', label: '敘述視角', placeholder: 'e.g. 小明第三人稱有限視角' },
     { key: 'tone', label: '語調/氛圍', placeholder: 'e.g. 神秘 + 些少不安' },
-    { key: 'pacing', label: '節奏', placeholder: 'e.g. 開頭平靜→中段緊張→結尾cliffhanger' },
+    { key: 'pacing', label: '節奏', placeholder: 'e.g. 開頭平靜→中段緊張→結尾 cliffhanger' },
     { key: 'target_word_count', label: '目標字數', placeholder: 'e.g. 1500' },
     { key: 'author_notes', label: '作者補充筆記', placeholder: '呢場係全書轉捩點…' },
   ];
 
   return (
     <div className="mb-4 rounded-lg border border-quill-light bg-quill-light/10 p-3">
-      <div className="mb-2 text-xs font-semibold text-quill-dark">📝 Writing Brief</div>
+      <div className="mb-2 text-xs font-semibold text-quill-dark">📝 寫作設定</div>
       <div className="grid gap-2 sm:grid-cols-2">
         {fields.map((f) => (
           <div key={f.key}>

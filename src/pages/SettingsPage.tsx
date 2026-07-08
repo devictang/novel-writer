@@ -13,7 +13,6 @@ export function SettingsPage() {
   const [keyInput, setKeyInput] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Check if user has a key stored
   useEffect(() => {
     (async () => {
       const { data: session } = await supabase.auth.getSession();
@@ -31,7 +30,6 @@ export function SettingsPage() {
     })();
   }, [user]);
 
-  // Today's API usage
   const { data: usage } = useQuery({
     queryKey: ['api-usage'],
     queryFn: async () => {
@@ -53,7 +51,7 @@ export function SettingsPage() {
     setSaving(true);
     try {
       const { data: session } = await supabase.auth.getSession();
-      if (!session.data.session) throw new Error('Not authenticated');
+      if (!session.data.session) throw new Error('未登入');
 
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-api-key`,
@@ -67,23 +65,23 @@ export function SettingsPage() {
         }
       );
 
-      if (!res.ok) throw new Error('Failed to save key');
-      toast.success('API key saved securely');
+      if (!res.ok) throw new Error('儲存金鑰失敗');
+      toast.success('API 金鑰已安全儲存');
       setHasKey(true);
       setKeyInput('');
       setShowKey(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save');
+      toast.error(err instanceof Error ? err.message : '儲存失敗');
     } finally {
       setSaving(false);
     }
   };
 
   const deleteKey = async () => {
-    if (!confirm('Remove your Gemini API key?')) return;
+    if (!confirm('確定移除你的 Gemini API 金鑰？')) return;
     try {
       const { data: session } = await supabase.auth.getSession();
-      if (!session.data.session) throw new Error('Not authenticated');
+      if (!session.data.session) throw new Error('未登入');
 
       await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-api-key`,
@@ -96,10 +94,10 @@ export function SettingsPage() {
           body: JSON.stringify({ action: 'delete' }),
         }
       );
-      toast.success('API key removed');
+      toast.success('API 金鑰已移除');
       setHasKey(false);
     } catch {
-      toast.error('Failed to remove key');
+      toast.error('移除金鑰失敗');
     }
   };
 
@@ -110,13 +108,13 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <h1 className="mb-6 font-serif text-2xl font-bold text-ink">Settings</h1>
+      <h1 className="mb-6 font-serif text-2xl font-bold text-ink">設定</h1>
 
       {/* API Key Section */}
       <section className="mb-6 rounded-xl border border-gray-200 bg-white p-5">
         <div className="mb-3 flex items-center gap-2">
           <Key size={18} className="text-quill" />
-          <h2 className="text-sm font-semibold text-ink">Gemini API Key</h2>
+          <h2 className="text-sm font-semibold text-ink">Gemini API 金鑰</h2>
         </div>
 
         {hasKey ? (
@@ -130,12 +128,12 @@ export function SettingsPage() {
                   {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
                 <button onClick={deleteKey} className="rounded px-2 py-0.5 text-xs text-red-500 hover:bg-red-50">
-                  Remove
+                  移除
                 </button>
               </div>
             </div>
             <p className="mt-2 text-xs text-gray-400">
-              ✅ Key stored securely in Supabase Vault (encrypted, never exposed to client)
+              ✅ 金鑰已安全儲存於 Supabase Vault（加密儲存，永不會暴露於前端）
             </p>
           </div>
         ) : (
@@ -144,7 +142,7 @@ export function SettingsPage() {
               type={showKey ? 'text' : 'password'}
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
-              placeholder="Paste your Gemini API key…"
+              placeholder="貼上你的 Gemini API 金鑰…"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-quill focus:outline-none"
             />
             <button
@@ -153,14 +151,14 @@ export function SettingsPage() {
               className="mt-2 flex items-center gap-1.5 rounded-lg bg-quill px-3 py-2 text-sm font-medium text-white hover:bg-quill-dark disabled:opacity-50"
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Key size={14} />}
-              Save Securely
+              安全儲存
             </button>
             <p className="mt-2 text-xs text-gray-400">
-              Get a free key at{' '}
+              免費金鑰可於{' '}
               <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" className="text-quill underline">
                 Google AI Studio
-              </a>
-              . Free tier: 1500 requests/day (Gemini 3.5 Flash).
+              </a>{' '}
+              取得。免費額度：每日 1500 次請求（Gemini 3.5 Flash）。
             </p>
           </div>
         )}
@@ -170,12 +168,12 @@ export function SettingsPage() {
       <section className="mb-6 rounded-xl border border-gray-200 bg-white p-5">
         <div className="mb-3 flex items-center gap-2">
           <Zap size={18} className="text-quill" />
-          <h2 className="text-sm font-semibold text-ink">AI Usage Today</h2>
+          <h2 className="text-sm font-semibold text-ink">今日 AI 用量</h2>
         </div>
 
         <div className="mb-2 flex items-center justify-between text-sm">
-          <span className="text-gray-600">{totalToday} / {LIMIT} requests</span>
-          <span className="font-medium text-quill">{remaining} remaining</span>
+          <span className="text-gray-600">{totalToday} / {LIMIT} 次請求</span>
+          <span className="font-medium text-quill">剩餘 {remaining} 次</span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-gray-100">
           <div
@@ -189,25 +187,25 @@ export function SettingsPage() {
             {usage.map((u) => (
               <div key={u.id} className="flex justify-between text-xs text-gray-500">
                 <span>{u.model}</span>
-                <span>{u.request_count} requests</span>
+                <span>{u.request_count} 次請求</span>
               </div>
             ))}
           </div>
         )}
 
         <p className="mt-3 text-xs text-gray-400">
-          Quota resets daily at 00:00 UTC. Each AI generation = 1 request.
+          配額每日於 00:00 UTC 重置。每次 AI 生成 = 1 次請求。
         </p>
       </section>
 
       {/* Tips */}
       <section className="rounded-xl border border-quill-light bg-quill-light/10 p-5">
-        <h2 className="mb-2 text-sm font-semibold text-quill-dark">💡 Quota-Saving Tips</h2>
+        <h2 className="mb-2 text-sm font-semibold text-quill-dark">💡 慳配額貼士</h2>
         <ul className="space-y-1 text-xs text-gray-600">
-          <li>• Each "AI Generate" combines prose + entity update in 1 call</li>
-          <li>• Scene card edits are cached — unchanged scenes cost 0 requests</li>
-          <li>• Consistency check is manual (only run when you need it)</li>
-          <li>• Entity name detection is rule-based (0 API calls)</li>
+          <li>• 每次「AI 生成」已合併 prose 生成 + 實體更新，只需 1 次請求</li>
+          <li>• 場景卡內容有快取 — 未改動的場景不需任何請求</li>
+          <li>• 一致性檢查為手動觸發（需要時才使用）</li>
+          <li>• 實體名稱偵測使用規則比對（不需 API 請求）</li>
         </ul>
       </section>
     </div>

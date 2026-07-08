@@ -35,7 +35,7 @@ export default function App() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="text-quill animate-pulse text-xl">Loading Novel Writer…</div>
+        <div className="text-quill animate-pulse text-xl">載入中…</div>
       </div>
     );
   }

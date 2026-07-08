@@ -14,7 +14,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    toast.success('Signed out');
+    toast.success('已登出');
     navigate('/auth');
   };
 
@@ -70,7 +70,7 @@ function WorkspaceSidebar() {
   return (
     <nav className="p-3">
       <div className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
-        Works
+        作品列表
       </div>
       {works && works.length > 0 ? (
         <ul className="space-y-0.5">
@@ -87,13 +87,12 @@ function WorkspaceSidebar() {
           ))}
         </ul>
       ) : (
-        <p className="px-2 text-xs text-gray-400">No works yet</p>
+        <p className="px-2 text-xs text-gray-400">暫無作品</p>
       )}
     </nav>
   );
 }
 
-// Simple hook to list works — uses supabase directly
 import { useQuery } from '@tanstack/react-query';
 import type { Work } from '../types';
 

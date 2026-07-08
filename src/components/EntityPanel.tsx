@@ -24,7 +24,7 @@ export function EntityPanel({
   const createEntity = useMutation({
     mutationFn: async (name: string) => {
       const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('Not authenticated');
+      if (!userData.user) throw new Error('未登入');
       const { data, error } = await supabase
         .from('entities')
         .insert({
@@ -40,7 +40,7 @@ export function EntityPanel({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entities', workId] });
-      toast.success('Entity created');
+      toast.success('實體已創建');
       setShowCreate(false);
       setNewName('');
     },
@@ -61,7 +61,7 @@ export function EntityPanel({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entities', workId] });
-      toast.success('Deleted');
+      toast.success('已刪除');
     },
   });
 
@@ -70,6 +70,13 @@ export function EntityPanel({
     worldbuilding: '🌍',
     foreshadow: '🔍',
     timeline_event: '📅',
+  };
+
+  const typeNames: Record<string, string> = {
+    character: '角色',
+    worldbuilding: '世界觀',
+    foreshadow: '伏筆',
+    timeline_event: '事件',
   };
 
   const statusLabels: Record<string, Record<string, string>> = {
@@ -89,7 +96,7 @@ export function EntityPanel({
             onKeyDown={(e) => {
               if (e.key === 'Enter' && newName.trim()) createEntity.mutate(newName.trim());
             }}
-            placeholder={`${type} name…`}
+            placeholder={`新${typeNames[type]}名稱…`}
             className="flex-1 rounded border border-gray-200 px-2 py-1 text-xs"
           />
           <button onClick={() => setShowCreate(false)} className="text-xs text-gray-400">✕</button>
@@ -100,12 +107,12 @@ export function EntityPanel({
           onClick={() => setShowCreate(true)}
           className="mb-2 flex items-center gap-1 text-xs text-quill hover:text-quill-dark"
         >
-          <Plus size={12} /> New {type}
+          <Plus size={12} /> 新增{typeNames[type]}
         </button>
       )}
 
       {filtered.length === 0 && (
-        <p className="px-2 py-4 text-center text-xs text-gray-400">No {type} entries yet</p>
+        <p className="px-2 py-4 text-center text-xs text-gray-400">尚未有{typeNames[type]}資料</p>
       )}
 
       {filtered.map((entity) => (
@@ -123,7 +130,7 @@ export function EntityPanel({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm(`Delete "${entity.name}"?`)) deleteEntity.mutate(entity.id);
+                if (confirm(`確定刪除「${entity.name}」？`)) deleteEntity.mutate(entity.id);
               }}
               className="text-gray-300 hover:text-red-500"
             >
@@ -140,7 +147,7 @@ export function EntityPanel({
                     updateEntity.mutate({ id: entity.id, patch: { description: e.target.value } });
                   }
                 }}
-                placeholder="Description…"
+                placeholder="描述…"
                 className="mb-2 w-full rounded border border-gray-200 px-2 py-1 text-xs"
                 rows={3}
               />
@@ -148,7 +155,7 @@ export function EntityPanel({
               {type === 'character' && (
                 <>
                   <div className="mb-1.5">
-                    <label className="text-xs text-gray-500">Status</label>
+                    <label className="text-xs text-gray-500">狀態</label>
                     <select
                       defaultValue={entity.status}
                       onChange={(e) => updateEntity.mutate({ id: entity.id, patch: { status: e.target.value } })}
@@ -161,7 +168,7 @@ export function EntityPanel({
                     </select>
                   </div>
                   <div className="mb-1.5">
-                    <label className="text-xs text-gray-500">Aliases (comma-separated)</label>
+                    <label className="text-xs text-gray-500">別名（以逗號分隔）</label>
                     <input
                       type="text"
                       defaultValue={entity.aliases?.join(', ') ?? ''}
@@ -174,7 +181,7 @@ export function EntityPanel({
                     />
                   </div>
                   <div className="mb-1.5">
-                    <label className="text-xs text-gray-500">Current Mood</label>
+                    <label className="text-xs text-gray-500">當前心情</label>
                     <input
                       type="text"
                       defaultValue={(entity.metadata as EntityMetadata)?.current_state?.mood ?? ''}
@@ -193,7 +200,7 @@ export function EntityPanel({
               {type === 'foreshadow' && (
                 <>
                   <div className="mb-1.5">
-                    <label className="text-xs text-gray-500">Status</label>
+                    <label className="text-xs text-gray-500">狀態</label>
                     <select
                       defaultValue={entity.status}
                       onChange={(e) => updateEntity.mutate({ id: entity.id, patch: { status: e.target.value } })}
@@ -207,7 +214,7 @@ export function EntityPanel({
                     </select>
                   </div>
                   <div className="mb-1.5">
-                    <label className="text-xs text-gray-500">Importance (1-5)</label>
+                    <label className="text-xs text-gray-500">重要性（1-5）</label>
                     <input
                       type="number"
                       min={1}
@@ -226,7 +233,7 @@ export function EntityPanel({
 
               {type === 'worldbuilding' && (
                 <div className="mb-1.5">
-                  <label className="text-xs text-gray-500">Category</label>
+                  <label className="text-xs text-gray-500">分類</label>
                   <select
                     defaultValue={(entity.metadata as EntityMetadata)?.category ?? ''}
                     onChange={(e) => {
