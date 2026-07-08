@@ -14,6 +14,8 @@ const DAILY_LIMIT = 1500;
 interface RequestBody {
   chapter_id: string;
   work_id: string;
+  mode?: "generate" | "combine_scenes";
+  scene_ids?: string[];
 }
 
 Deno.serve(async (req: Request) => {
@@ -44,7 +46,7 @@ Deno.serve(async (req: Request) => {
     const userId = userData.user.id;
 
     // 2. Parse request
-    const { chapter_id, work_id } = (await req.json()) as RequestBody;
+    const { chapter_id, work_id, mode, scene_ids } = (await req.json()) as RequestBody;
     if (!chapter_id || !work_id) return jsonError("Missing chapter_id or work_id");
 
     // 3. Check quota
@@ -83,31 +85,99 @@ Deno.serve(async (req: Request) => {
     const brief = chapter.writing_brief || {};
 
     // Build entity context
-    const characters = (entities || [])
-      .filter((e: any) => sceneCard.characters?.includes(e.id))
-      .map((e: any) => ({
-        name: e.name,
-        description: e.description,
-        mood: e.metadata?.current_state?.mood || "unknown",
-        status: e.status || "unknown",
-      }));
+    let characters, locations, foreshadows;
+    let combinePrompt = "";
 
-    const locations = (entities || [])
-      .filter((e: any) => sceneCard.locations?.includes(e.id))
-      .map((e: any) => ({
-        name: e.name,
-        description: e.description,
-        category: e.metadata?.category,
-      }));
+    if (mode === "combine_scenes" && scene_ids && scene_ids.length > 0) {
+      // === COMBINE SCENES MODE ===
+      // Fetch all scene children
+      const { data: sceneChapters } = await supabase
+        .from("chapters")
+        .select("*")
+        .in("id", scene_ids)
+        .order("sort_order", { ascending: true });
 
-    const foreshadows = (entities || [])
-      .filter((e: any) => sceneCard.foreshadows?.includes(e.id))
-      .map((e: any) => ({
-        name: e.name,
-        description: e.description,
-        status: e.status || "planted",
-        importance: e.metadata?.importance || 3,
-      }));
+      const scenesToCombine = (sceneChapters || []) as any[];
+
+      // Build combined scene info
+      const combinedSceneInfo = scenesToCombine.map((sc, i) => {
+        const scCard = sc.scene_card || {};
+        const scBrief = sc.writing_brief || {};
+        return `--- Scene ${i + 1}: ${sc.title} ---
+Summary: ${scCard.summary || "No summary"}
+Characters: ${(scCard.characters || []).join(", ")}
+Location: ${(scCard.locations || []).join(", ")}
+Foreshadows: ${(scCard.foreshadows || []).join(", ")}
+Writing Brief:
+- POV: ${scBrief.pov || "Third person limited"}
+- Tone: ${scBrief.tone || "Mysterious"}
+- Pacing: ${scBrief.pacing || "Balanced"}
+- Transition hint: ${scBrief.transition_hint || "—"}
+- Next scene hint: ${scBrief.next_scene_hint || "Continue to next scene"}
+- Target word count: ${scBrief.target_word_count || 500}
+- Author notes: ${scBrief.author_notes || ""}`;
+      }).join("\n\n");
+
+      characters = (entities || [])
+        .filter((e: any) => [].concat(...scenesToCombine.map((s: any) => s.scene_card?.characters || [])).includes(e.id))
+        .slice(0, 10)
+        .map((e: any) => ({ name: e.name, description: e.description, mood: e.metadata?.current_state?.mood || "unknown", status: e.status || "unknown" }));
+
+      combinePrompt = `
+【Full Chapter Context - ${scenesToCombine.length} scenes】
+
+${combinedSceneInfo}
+
+【All Related Characters】
+${JSON.stringify(characters, null, 2)}
+
+【Instructions for combining scenes】
+Write a complete chapter that includes ALL scenes listed above in order.
+- Use the transition hint between each scene (e.g., "—", "## Meanwhile...", "镜头一转")
+- Each scene should follow its own POV and tone
+- Generate natural transitions between scenes
+- Include appropriate scene break markers (---, ***, ##)
+
+After the prose, list entity updates and foreshadow progress.
+Respond in JSON format:
+{
+  "prose_text": "the complete chapter prose with all scenes and transitions...",
+  "entity_updates": [
+    { "entity_name": "...", "field": "mood", "old_value": "...", "new_value": "..." }
+  ],
+  "foreshadow_progress": [
+    { "name": "...", "progress": 50, "note": "..." }
+  ]
+}`;
+
+    } else {
+      // === SINGLE SCENE MODE ===
+      characters = (entities || [])
+        .filter((e: any) => sceneCard.characters?.includes(e.id))
+        .map((e: any) => ({
+          name: e.name,
+          description: e.description,
+          mood: e.metadata?.current_state?.mood || "unknown",
+          status: e.status || "unknown",
+        }));
+
+      locations = (entities || [])
+        .filter((e: any) => sceneCard.locations?.includes(e.id))
+        .map((e: any) => ({
+          name: e.name,
+          description: e.description,
+          category: e.metadata?.category,
+        }));
+
+      foreshadows = (entities || [])
+        .filter((e: any) => sceneCard.foreshadows?.includes(e.id))
+        .map((e: any) => ({
+          name: e.name,
+          description: e.description,
+          status: e.status || "planted",
+          importance: e.metadata?.importance || 3,
+        }));
+    }
 
     // 6. Get user's Gemini API key from vault
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -124,7 +194,9 @@ Deno.serve(async (req: Request) => {
     const geminiKey = secretData.secret;
 
     // 7. Build prompt (all-in-one: generate prose + detect entity changes)
-    const prompt = `You are a novel writing assistant. Based on the following scene card and story context, generate a complete chapter in prose form.
+    const prompt = mode === "combine_scenes" && combinePrompt
+      ? `You are a novel writing assistant. Combine the following scenes into a complete chapter with transitions.${combinePrompt}`
+      : `You are a novel writing assistant. Based on the following scene card and story context, generate a complete chapter in prose form.
 
 【Scene Summary】
 ${sceneCard.summary || "No summary provided."}

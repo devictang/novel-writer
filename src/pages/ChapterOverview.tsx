@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { Plus, Sparkles, ChevronUp, ChevronDown, FileText, Eye, Edit3 } from 'lucide-react';
 import type { Chapter, Entity } from '../types';
-import { SceneCardEditor } from './SceneCardEditor';
+import { SceneCardEditor } from '../components/SceneCardEditor';
 
 interface ChapterOverviewProps {
   chapter: Chapter;
