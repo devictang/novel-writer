@@ -38,7 +38,7 @@ export function AuthPage() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <Feather className="mx-auto mb-3 text-quill" size={48} />
-          <h1 className="font-serif text-3xl font-bold text-ink">Golden Quill</h1>
+          <h1 className="font-serif text-3xl font-bold text-ink">Novel Writer</h1>
           <p className="mt-1 text-sm text-ink-muted">敘事管理工作台</p>
         </div>
 

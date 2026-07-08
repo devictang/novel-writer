@@ -1,4 +1,4 @@
-# 🖋️ Golden Quill — 敘事管理工作台
+# 🖋️ Novel Writer — 敘事管理與寫作助手
 
 A narrative management workbench for novelists — manage story structure, scene cards, character/worldbuilding/foreshadow tracking, AI-assisted writing, and shareable reading links.
 
@@ -30,8 +30,8 @@ A narrative management workbench for novelists — manage story structure, scene
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/devictang/golden-quill.git
-cd golden-quill
+git clone https://github.com/devictang/novel-writer.git
+cd novel-writer
 npm install
 ```
 
@@ -78,7 +78,7 @@ npm run dev
 
 ```bash
 # Push to GitHub
-git remote add origin https://github.com/devictang/golden-quill.git
+git remote add origin https://github.com/devictang/novel-writer.git
 git push -u origin main
 
 # In Vercel dashboard:

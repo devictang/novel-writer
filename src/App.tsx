@@ -34,7 +34,7 @@ export default function App() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="text-quill animate-pulse text-xl">Loading Golden Quill…</div>
+        <div className="text-quill animate-pulse text-xl">Loading Novel Writer…</div>
       </div>
     );
   }

@@ -31,7 +31,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </button>
           <Link to="/workspace" className="flex items-center gap-1.5">
             <Feather size={18} className="text-quill" />
-            <span className="font-serif text-sm font-bold text-ink">Golden Quill</span>
+            <span className="font-serif text-sm font-bold text-ink">Novel Writer</span>
           </Link>
         </div>
         <div className="flex items-center gap-3">
