@@ -9,6 +9,7 @@ import { WorkspacePage } from './pages/WorkspacePage';
 import { ReaderPage } from './pages/ReaderPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { Layout } from './components/Layout';
+import { ConfirmPage } from './pages/ConfirmPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,8 +48,9 @@ export default function App() {
           {/* Public reader route — no auth required */}
           <Route path="/read/:slug" element={<ReaderPage />} />
 
-          {/* Auth route */}
+          {/* Auth routes */}
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/auth/confirm" element={<ConfirmPage />} />
 
           {/* Protected routes */}
           <Route
