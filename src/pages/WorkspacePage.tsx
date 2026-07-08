@@ -78,21 +78,36 @@ function WorksListPage() {
 
         {showCreate && (
           <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
-            <input
-              autoFocus
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && newTitle.trim()) {
-                  createMutation.mutate(newTitle.trim());
-                  setShowCreate(false);
-                  setNewTitle('');
-                }
-              }}
-              placeholder="作品名稱…"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-quill focus:outline-none"
-            />
+            <div className="flex gap-2">
+              <input
+                autoFocus
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newTitle.trim()) {
+                    createMutation.mutate(newTitle.trim());
+                    setShowCreate(false);
+                    setNewTitle('');
+                  }
+                }}
+                placeholder="作品名稱…"
+                className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:border-quill focus:outline-none"
+              />
+              <button
+                onClick={() => {
+                  if (newTitle.trim()) {
+                    createMutation.mutate(newTitle.trim());
+                    setShowCreate(false);
+                    setNewTitle('');
+                  }
+                }}
+                className="rounded-lg bg-quill px-4 py-2 text-sm font-medium text-white hover:bg-quill-dark"
+              >
+                新增
+              </button>
+              <button onClick={() => { setShowCreate(false); setNewTitle(''); }} className="text-sm text-gray-400">✕</button>
+            </div>
           </div>
         )}
 

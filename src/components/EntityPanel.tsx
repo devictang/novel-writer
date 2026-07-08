@@ -99,6 +99,12 @@ export function EntityPanel({
             placeholder={`新${typeNames[type]}名稱…`}
             className="flex-1 rounded border border-gray-200 px-2 py-1 text-xs"
           />
+          <button
+            onClick={() => { if (newName.trim()) createEntity.mutate(newName.trim()); }}
+            className="rounded bg-quill px-2 py-1 text-xs text-white hover:bg-quill-dark"
+          >
+            新增
+          </button>
           <button onClick={() => setShowCreate(false)} className="text-xs text-gray-400">✕</button>
         </div>
       )}
